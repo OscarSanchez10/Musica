@@ -1,19 +1,20 @@
 import React, { Component } from 'react';
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  Image,
-  ImageBackground,
-  StyleSheet,
-  Modal,
-  FlatList,
-} from 'react-native';
+import {View,Text,TouchableOpacity,Image,ImageBackground,StyleSheet,Modal,FlatList,} from 'react-native';
 import { Audio } from 'expo-av';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import Slider from 'react-native-slider';
 
 Icon.loadFont();
+
+function formatTime(timeMillis) {
+  if (!isNaN(timeMillis)) {
+    const totalSeconds = Math.floor(timeMillis / 1000);
+    const minutes = Math.floor(totalSeconds / 60);
+    const seconds = totalSeconds % 60;
+    return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+  }
+  return '0:00';
+}
 
 class MusicPlayerApp extends Component {
   constructor() {
@@ -25,13 +26,15 @@ class MusicPlayerApp extends Component {
         'Blackpink - Shut Down': require('./assets/Blackpink-ShutDown.mp3'),
         'Lalisa - Money': require('./assets/Lalisa-Money.mp3'),
         'New Jeans - OMG': require('./assets/NewJeans-OMG.mp3'),
+        'Peso Pluma - LADY GAGA': require('./assets/PesoPluma-Ladygaga.mp3'),
       },
       songImages: {
         'Blackpink - Shut Down': require('./assets/shutdown.jpg'),
         'Lalisa - Money': require('./assets/money.jpg'),
         'New Jeans - OMG': require('./assets/omg.jpg'),
+        'Peso Pluma - LADY GAGA': require('./assets/ladygaga.jpg'),
       },
-      songOrder: ['Blackpink - Shut Down', 'Lalisa - Money', 'New Jeans - OMG'],
+      songOrder: ['Blackpink - Shut Down', 'Lalisa - Money', 'New Jeans - OMG', 'Peso Pluma - LADY GAGA' ],
       currentSongIndex: 0,
       isSongLoaded: false,
       duration: 0,
@@ -47,6 +50,9 @@ class MusicPlayerApp extends Component {
       this.setState({ isSongLoaded: true });
       const status = await this.sound.getStatusAsync();
       this.setState({ duration: status.durationMillis });
+
+      // Inicia un temporizador para actualizar la posición del slider
+      this.timer = setInterval(this.updatePositionFromTimer, 1000); // Actualiza cada segundo
     } catch (error) {
       console.error('Error al cargar la música:', error);
     }
@@ -103,6 +109,14 @@ class MusicPlayerApp extends Component {
     } catch (error) {}
   };
 
+  // Método para actualizar la posición desde el temporizador
+  updatePositionFromTimer = async () => {
+    if (this.state.isPlaying) {
+      const status = await this.sound.getStatusAsync();
+      this.setState({ position: status.positionMillis });
+    }
+  };
+
   toggleSongListModal = () => {
     this.setState((prevState) => ({
       isSongListVisible: !prevState.isSongListVisible,
@@ -111,6 +125,9 @@ class MusicPlayerApp extends Component {
 
   componentWillUnmount() {
     this.sound.unloadAsync();
+
+    // Limpia el temporizador
+    clearInterval(this.timer);
   }
 
   render() {
@@ -143,6 +160,15 @@ class MusicPlayerApp extends Component {
             minimumTrackTintColor="white"
             maximumTrackTintColor="gray"
           />
+          {/* Muestra la duración total y la posición actual */}
+          <View style={styles.durationContainer}>
+            <Text style={styles.durationText}>
+              {formatTime(this.state.position)}
+            </Text>
+            <Text style={styles.durationText}>
+              {formatTime(this.state.duration)}
+            </Text>
+          </View>
           <View style={styles.controlsContainer}>
             <TouchableOpacity
               style={styles.button}
@@ -275,6 +301,21 @@ const styles = StyleSheet.create({
     color: 'white',
     marginTop: 20,
     textAlign: 'center',
+  },
+  durationContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    width: '80%',
+  },
+  durationText: {
+    color: 'white',
+    fontSize: 16,
+    marginTop: 10,
+  },
+  positionText: {
+    color: 'white',
+    fontSize: 16,
+    marginTop: 10,
   },
 });
 
