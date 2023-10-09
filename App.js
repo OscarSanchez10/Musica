@@ -1,5 +1,14 @@
 import React, { Component } from 'react';
-import { View, Text, TouchableOpacity, Image, ImageBackground, StyleSheet } from 'react-native';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  Image,
+  ImageBackground,
+  StyleSheet,
+  Modal,
+  FlatList,
+} from 'react-native';
 import { Audio } from 'expo-av';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import Slider from 'react-native-slider';
@@ -27,6 +36,7 @@ class MusicPlayerApp extends Component {
       isSongLoaded: false,
       duration: 0,
       position: 0,
+      isSongListVisible: false,
     };
     this.sound = new Audio.Sound();
   }
@@ -90,10 +100,14 @@ class MusicPlayerApp extends Component {
     try {
       await this.sound.setPositionAsync(value);
       this.setState({ position: value });
-    } catch (error) {
-    }
+    } catch (error) {}
   };
 
+  toggleSongListModal = () => {
+    this.setState((prevState) => ({
+      isSongListVisible: !prevState.isSongListVisible,
+    }));
+  };
 
   componentWillUnmount() {
     this.sound.unloadAsync();
@@ -106,6 +120,12 @@ class MusicPlayerApp extends Component {
         style={styles.background}
       >
         <View style={styles.container}>
+          <TouchableOpacity
+            style={styles.menuButton}
+            onPress={this.toggleSongListModal}
+          >
+            <Text style={styles.menuButtonText}>:</Text>
+          </TouchableOpacity>
           <Text style={{ fontSize: 25, fontWeight: 'bold', color: 'white', marginBottom: 20 }}>
             {this.state.currentSong}
           </Text>
@@ -144,6 +164,28 @@ class MusicPlayerApp extends Component {
             </TouchableOpacity>
           </View>
         </View>
+        <Modal
+          visible={this.state.isSongListVisible}
+          transparent={true}
+          animationType="slide"
+          onRequestClose={this.toggleSongListModal}
+        >
+          <View style={styles.modalContainer}>
+            <View style={styles.songListModal}>
+              <Text style={styles.songListTitle}>Lista de Canciones</Text>
+              <FlatList
+                data={this.state.songOrder}
+                renderItem={({ item }) => (
+                  <Text style={styles.songListItem}>{item}</Text>
+                )}
+                keyExtractor={(item) => item}
+              />
+              <TouchableOpacity onPress={this.toggleSongListModal}>
+                <Text style={styles.closeButton}>Cerrar</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
       </ImageBackground>
     );
   }
@@ -189,6 +231,50 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     resizeMode: 'cover',
     marginBottom: 20,
+  },
+  menuButton: {
+    position: 'absolute',
+    top: 20,
+    left: 20,
+    zIndex: 1,
+    backgroundColor: 'transparent',
+    color: 'white',
+  },
+  menuButtonText: {
+    fontSize: 30,
+    color: 'white',
+    marginTop: 50,
+    marginLeft: 15,
+  },
+  modalContainer: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)', // Fondo gris transparente
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  songListModal: {
+    width: '80%',
+    backgroundColor: '#333', // Fondo gris oscuro del modal
+    borderRadius: 10,
+    padding: 20,
+  },
+  songListTitle: {
+    fontSize: 25,
+    fontWeight: 'bold',
+    color: 'white',
+    marginBottom: 20,
+    marginTop: 10,
+  },
+  songListItem: {
+    fontSize: 20,
+    color: 'white',
+    marginBottom: 10,
+  },
+  closeButton: {
+    fontSize: 20,
+    color: 'white',
+    marginTop: 20,
+    textAlign: 'center',
   },
 });
 
